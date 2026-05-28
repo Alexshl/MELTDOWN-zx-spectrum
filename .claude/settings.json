@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose build)",
+      "Bash(docker compose run --rm build)",
+      "Bash(docker compose run --rm smoke)",
+      "Bash(docker compose run --rm integration)",
+      "Bash(docker compose run --rm trace*)",
+      "Bash(docker compose run --rm disasm)",
+      "Bash(docker compose run --rm disasm-alt)",
+      "Bash(docker ps)",
+      "Bash(docker images*)",
+      "Bash(xxd artifacts/smoke.scr)",
+      "Bash(xxd -s 6144 -l 64 artifacts/smoke.scr)",
+      "Bash(wc -c artifacts/*)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"===EXIT $?===\")"
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+# Build artifacts
+build/
+artifacts/
+
+# z88dk intermediate files (in case they leak into src/)
+*.o
+*.asm
+*.lis
+*.map
+*.sym
+*.def
+*.reloc
+*.bin
+*.tap
+*.sna
+*.z80
+
+# macOS
+.DS_Store
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker Compose local UID/GID override
+.env
+
+# Foreign binaries to be analyzed by the investigator subsystem.
+# Keep the directory in git (via .gitkeep and README.md) but ignore its payload.
+imports/*
+!imports/.gitkeep
+!imports/README.md

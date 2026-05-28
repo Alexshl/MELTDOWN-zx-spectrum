@@ -1,0 +1,8 @@
+build/
+artifacts/
+.git
+docs/
+.claude/
+.vscode/
+.idea/
+.DS_Store

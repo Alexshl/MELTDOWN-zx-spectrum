@@ -1,0 +1,18 @@
+# Inner Makefile: used inside the Docker container.
+# Only depends on zcc (from z88dk).
+
+PROJECT = app
+SRCS = src/main.c
+CFLAGS = +zx -vn -SO3 -clib=new -pragma-include:zpragma.inc -m
+LDFLAGS = -create-app
+
+all: build/$(PROJECT).tap
+
+build/$(PROJECT).tap: $(SRCS) zpragma.inc
+	@mkdir -p build
+	zcc $(CFLAGS) $(SRCS) -o build/$(PROJECT) $(LDFLAGS)
+
+clean:
+	rm -rf build/
+
+.PHONY: all clean
