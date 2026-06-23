@@ -1,6 +1,6 @@
 # 06. Intruder spawning + path movement
 
-**Status**: TODO
+**Status**: DONE
 **Depends on**: 04
 **Blocks**: 07
 
@@ -38,3 +38,7 @@ intruder reaches the core and assert reactor stability has decremented (assert_e
 ## Out of scope
 
 - Turrets firing at intruders (task 07).
+
+## Completion note
+
+Implemented 2026-06-23. ENTER key (both rising-edge and mailbox case 13) transitions to WAVE phase and starts spawning DRONEs at path origin; each enemy advances independently per its step_timer and path_idx; reaching the core removes the enemy, decrements stability (clamped), and erases glyph. GameState extended with stability (@_G+137) and enemies[] array (@_G+142); enemy_stats const table in level.c defines speed per type (DRONE/RUNNER/BRUTE).

@@ -7,6 +7,13 @@ const struct TurretStat turret_stats[3] = {
     { 30, 3, 2, 20 }   /* TURRET_TESLA   */
 };
 
+/* hp, speed (frames per cell step), bounty */
+const struct EnemyStat enemy_stats[3] = {
+    { 3,  8, 5 },  /* ENEMY_DRONE  */
+    { 2,  4, 4 },  /* ENEMY_RUNNER */
+    { 6, 14, 9 }   /* ENEMY_BRUTE  */
+};
+
 /*
  * Map layout (32 cols x 21 rows):
  *   ENTRY at (1,10), path winds right then down then right to CORE at (10,15).
@@ -86,6 +93,21 @@ const struct PathPoint level_path[] = {
 };
 
 const uint8_t level_path_len = 15;
+
+/* Wave definitions: count, type (enum EnemyType), spawn_interval (frames).
+ * Wave 0 is a single DRONE with spawn_interval=10, matching historical behaviour
+ * so enemy-path-march and combat-kill integration scenarios keep passing.
+ * Waves increase in difficulty: more enemies and harder types.
+ * Total enemies: 1+4+4+4+4+4 = 21, which exceeds starting stability (20),
+ * so a no-turret run causes MELTDOWN before the final wave clears (WIN). */
+const struct WaveDef level_waves[WAVE_COUNT] = {
+    { 1,  ENEMY_DRONE,  10 }, /* wave 0: 1 DRONE,  interval 10 */
+    { 4,  ENEMY_DRONE,  10 }, /* wave 1: 4 DRONEs, interval 10 */
+    { 4,  ENEMY_DRONE,   8 }, /* wave 2: 4 DRONEs, interval  8 */
+    { 4,  ENEMY_RUNNER,  8 }, /* wave 3: 4 RUNNERs, interval 8 */
+    { 4,  ENEMY_RUNNER,  6 }, /* wave 4: 4 RUNNERs, interval 6 */
+    { 4,  ENEMY_BRUTE,  10 } /* wave 5: 4 BRUTEs, interval 10 */
+};
 
 uint8_t level_cell(uint8_t col, uint8_t row)
 {

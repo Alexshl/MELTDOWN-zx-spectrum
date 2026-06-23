@@ -1,6 +1,6 @@
 # 09. AY sound + content + balance + polish
 
-**Status**: TODO
+**Status**: DONE
 **Depends on**: 08
 **Blocks**: —
 
@@ -37,3 +37,7 @@ scenarios: [sfx-events, build-place-turret, enemy-path-march, combat-kill, flow-
 ## Out of scope
 
 - AY music (SFX only in MVP); flying/healer/boss enemies; turret upgrades; multiple maps.
+
+## Completion note
+
+Implemented 2026-06-23. AY-3-8912 SFX wired to six game events via port writes (0xFFFD select / 0xBFFD data) with `G.last_sfx` event tracking for ZRCP verification. Content: 3 turret types (LASER/MISSILE/TESLA) and 3 enemy types (DRONE/RUNNER/BRUTE) deployed across 6-wave table; level is completable with good play and loseable with poor play. Build, smoke, and all six integration scenarios PASS.

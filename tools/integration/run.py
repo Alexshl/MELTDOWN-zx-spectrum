@@ -192,8 +192,9 @@ def send_key(z: Zrcp, key: str, duration_ms: int = 100, syms: dict = None):
     Instead, input.c exposes g_test_cmd: writing an ASCII byte there causes
     input_poll to process one action on the next call, then clears it.
 
-    duration_ms is used as a settle delay (in ms) after injection so the game
-    loop has time to process the command before the caller checks state.
+    Uses a handshake: after writing the mailbox, polls until input_poll consumes
+    it (reads back 0), guaranteeing deterministic delivery regardless of per-frame
+    timing variation (title-screen renders, combat frames, etc.).
     """
     if syms is None:
         syms = {}
@@ -208,10 +209,23 @@ def send_key(z: Zrcp, key: str, duration_ms: int = 100, syms: dict = None):
         z.cmd(f"send-keys-string {duration_ms} {ascii_char}")
         return
 
-    # Write ASCII value to the command mailbox; input_poll clears it after acting.
-    z.cmd(f"write-memory {cmd_addr} {ascii_val:02x}")
-    # Wait for input_poll to run (at 50 Hz, ~20 ms per frame; use duration_ms as settle)
-    time.sleep(max(duration_ms / 1000.0, 0.1))
+    # Write ASCII to the one-shot mailbox.
+    z.cmd(f"write-memory {cmd_addr} {ascii_val}")
+    # Handshake: wait until input_poll consumes it (mailbox reads back 0).
+    # Deterministic delivery regardless of the game's per-frame timing.
+    timeout = max(duration_ms / 1000.0, 1.5)
+    deadline = time.monotonic() + timeout
+    consumed = False
+    while time.monotonic() < deadline:
+        if read_byte(z, cmd_addr) == 0:
+            consumed = True
+            break
+        time.sleep(0.01)
+    # Small settle so the synchronous handler (called right after the clear) finishes.
+    time.sleep(0.06)
+    if not consumed:
+        # leave a breadcrumb; the assert that follows will surface the real failure
+        print(f"[send_key] WARNING: mailbox not consumed within {timeout:.1f}s for key {key!r}", file=sys.stderr)
 
 
 def dump_board(z: Zrcp, syms: dict, out_name: str):

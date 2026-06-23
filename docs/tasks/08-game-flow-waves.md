@@ -1,6 +1,6 @@
 # 08. Game flow — waves, win/MELTDOWN, HUD, title
 
-**Status**: TODO
+**Status**: DONE
 **Depends on**: 07
 **Blocks**: 09
 
@@ -40,3 +40,7 @@ assert `state == MELTDOWN` and stability == 0.
 ## Out of scope
 
 - Sound (task 09); final balance tuning (task 09).
+
+## Completion note
+
+Implemented 2026-06-23. Top-level state machine (STATE_TITLE/PLAY/WIN/MELTDOWN) with wave progression, wave-clear bonus, HUD display (gold/stability/wave#/selected turret), and title screen. All five acceptance criteria verified; integration tests passed (flow-win, flow-meltdown, and existing scenarios).

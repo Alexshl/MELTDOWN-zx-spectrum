@@ -1,6 +1,6 @@
 # 05. Cursor, turret placement, economy
 
-**Status**: IN PROGRESS
+**Status**: DONE
 **Depends on**: 04
 **Blocks**: 07
 
@@ -40,3 +40,7 @@ occupied cell → assert `towers_count == 1` (rejected, unchanged).
 ## Out of scope
 
 - Combat / firing (task 07); selling / upgrading.
+
+## Completion note
+
+Implemented 2026-06-23. QAOP + SPACE + M implemented with edge-detected hardware-correct scancodes in input.c; game.c enforces placement rules (buildable, not-occupied, gold sufficient); turret stats const in level.c; all 18 test asserts pass. A test-only input mailbox `g_test_cmd` (non-static global, poked by tools/integration/run.py via ZRCP write-memory to bypass ZEsarUX keyboard port limitations) was added and ships in the binary — candidate for future `#ifdef ZX_TEST_HOOKS` cleanup in tasks 06/08.

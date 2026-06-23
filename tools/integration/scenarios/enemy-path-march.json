@@ -1,0 +1,29 @@
+{
+  "name": "enemy-path-march",
+  "description": "First ENTER dismisses title (title->BUILD). Second ENTER starts wave; DRONE spawns at ENTRY, advances path, reaches CORE, decrements stability. Offsets: stability _G+137, enemies_count _G+138, enemies[0].active _G+142, path_idx _G+144.",
+  "steps": [
+    { "op": "frames", "n": 25 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 0, "ctx": "state TITLE at boot" },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "phase BUILD at boot" },
+    { "op": "assert_eq", "mem": "_G+137", "val": 20, "ctx": "stability 20" },
+    { "op": "assert_eq", "mem": "_G+138", "val": 0,  "ctx": "no enemies" },
+
+    { "op": "key", "key": "ENTER", "duration_ms": 200 },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 1, "ctx": "state PLAY after title dismiss" },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "phase BUILD after title dismiss" },
+
+    { "op": "key", "key": "ENTER", "duration_ms": 200 },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 1, "ctx": "phase WAVE after wave start" },
+    { "op": "assert_nonzero", "mem": "_G+138", "ctx": "enemy spawned" },
+    { "op": "assert_eq",      "mem": "_G+142", "val": 1, "ctx": "enemies[0] active" },
+
+    { "op": "frames", "n": 40 },
+    { "op": "assert_nonzero", "mem": "_G+144", "ctx": "path_idx advanced (relaxed: +-1 frame timing)" },
+
+    { "op": "frames", "n": 450 },
+    { "op": "assert_eq", "mem": "_G+137", "val": 19, "ctx": "stability 20->19 after CORE leak" },
+    { "op": "assert_eq", "mem": "_G+142", "val": 0,  "ctx": "enemies[0] freed after leak" }
+  ]
+}

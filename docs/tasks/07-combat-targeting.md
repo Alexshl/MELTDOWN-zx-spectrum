@@ -1,6 +1,6 @@
 # 07. Combat — targeting + damage
 
-**Status**: TODO
+**Status**: DONE
 **Depends on**: 05, 06
 **Blocks**: 08
 
@@ -37,3 +37,7 @@ assert_nonzero on the relevant `_G` fields).
 ## Out of scope
 
 - Full balance pass (task 09); win/lose flow (task 08).
+
+## Completion note
+
+Implemented 2026-06-23. Chebyshev-range targeting fires on cooldown, damages in-range enemies only, applies splash (MISSILE) and slow (TESLA) effects, removes dead enemies, awards gold, and throttles scans via cooldown state. Integration scenario combat-kill passes; build clean.

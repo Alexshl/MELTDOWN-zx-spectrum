@@ -1,0 +1,27 @@
+{
+  "name": "sfx-events",
+  "description": "SFX event ids written to G.last_sfx (_G+241, sticky). Dismiss title, start wave 0 with no turret -> SFX_WAVE_START(3) observable. Build LASER during the wave -> it fires and kills the DRONE -> last_sfx becomes a non-zero fire/hit id. Offsets: state _G+239, phase _G+2, towers_count _G+8, kills _G+238, last_sfx _G+241.",
+  "steps": [
+    { "op": "frames", "n": 25 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 0, "ctx": "state TITLE at boot" },
+    { "op": "assert_eq", "mem": "_G+241", "val": 0, "ctx": "last_sfx NONE at boot" },
+
+    { "op": "key", "key": "ENTER", "duration_ms": 200 },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 1, "ctx": "state PLAY after title dismiss" },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "phase BUILD after title dismiss" },
+
+    { "op": "key", "key": "ENTER", "duration_ms": 200 },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 1, "ctx": "phase WAVE for wave 0" },
+    { "op": "assert_eq", "mem": "_G+241", "val": 3, "ctx": "SFX_WAVE_START (no turret -> not overwritten by fire)" },
+
+    { "op": "key", "key": "M", "duration_ms": 200 },
+    { "op": "frames", "n": 15 },
+    { "op": "assert_eq", "mem": "_G+8", "val": 1, "ctx": "LASER built at (2,9) during wave" },
+
+    { "op": "frames", "n": 150 },
+    { "op": "assert_nonzero", "mem": "_G+238", "ctx": "kills > 0: LASER killed the DRONE" },
+    { "op": "assert_nonzero", "mem": "_G+241", "ctx": "last_sfx is a non-zero fire/hit id after combat" }
+  ]
+}

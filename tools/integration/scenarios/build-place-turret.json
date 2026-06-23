@@ -1,8 +1,14 @@
 {
   "name": "build-place-turret",
-  "description": "Cursor move (P), default LASER, build with M, verify gold/towers_count, reject second build on occupied cell.",
+  "description": "Dismiss title with ENTER (title->BUILD), then cursor move (P), default LASER, build with M, verify gold/towers_count, reject second build on occupied cell.",
   "steps": [
     { "op": "frames", "n": 25 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 0, "ctx": "state TITLE at boot" },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "phase BUILD at boot" },
+    { "op": "key", "key": "ENTER", "duration_ms": 200 },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 1, "ctx": "state PLAY after title dismiss" },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "phase still BUILD after title dismiss" },
     { "op": "assert_eq", "mem": "_G+5", "val": 100, "ctx": "starting gold 100" },
     { "op": "assert_eq", "mem": "_G+7", "val": 0, "ctx": "sel LASER" },
     { "op": "assert_eq", "mem": "_G+8", "val": 0, "ctx": "towers 0" },
