@@ -24,17 +24,24 @@ ZRCP_HOST = "127.0.0.1"
 ZRCP_PORT = 10000
 ARTIFACTS_DIR = "/work/artifacts"
 
-# ── Key mapping (ZX Spectrum keyboard scan codes via send-keys-string) ──────
-# input.c uses: IN_KEY_SCANCODE_5 (left), IN_KEY_SCANCODE_8 (right),
-#               IN_KEY_SCANCODE_6 (down), IN_KEY_SCANCODE_7 (up/rotate),
-#               IN_KEY_SCANCODE_SPACE (hard drop), ENTER (rotate)
+# ── Key mapping for ZX Spectrum games using in_key_pressed (hardware port reads) ─
+# ZEsarUX ZRCP does not support injecting keys into the Z80 hardware port (0xFE)
+# via send-keys-string or set-ui-io-ports. Instead, input.c exposes a one-shot
+# command mailbox variable g_test_cmd. The runner writes the ASCII character to
+# that address; input_poll reads it, acts, and clears it.
+# KEY_MAP: scenario "key" name → ASCII character written to g_test_cmd.
 KEY_MAP = {
-    "LEFT":  "5",
-    "RIGHT": "8",
-    "DOWN":  "6",
-    "UP":    "7",
-    "SPACE": " ",
-    "ENTER": "\r",
+    "LEFT":  "O",   # O = move left (in_key_pressed O)
+    "RIGHT": "P",   # P = move right
+    "DOWN":  "A",   # A = move down
+    "UP":    "Q",   # Q = move up
+    "SPACE": " ",   # SPACE = cycle turret
+    "ENTER": "\r",  # ENTER (no-op this task)
+    "P": "P",
+    "Q": "Q",
+    "A": "A",
+    "O": "O",
+    "M": "M",
 }
 
 
@@ -176,10 +183,35 @@ def advance_frames(z: Zrcp, n: int):
     time.sleep(secs)
 
 
-def send_key(z: Zrcp, key: str, duration_ms: int = 100):
-    """Press a key for duration_ms milliseconds."""
-    ascii_char = KEY_MAP.get(key.upper(), key)
-    z.cmd(f"send-keys-string {duration_ms} {ascii_char}")
+def send_key(z: Zrcp, key: str, duration_ms: int = 100, syms: dict = None):
+    """
+    Inject a key action via the g_test_cmd mailbox in input.c.
+
+    ZEsarUX ZRCP does not support injecting into the Z80 keyboard hardware port
+    (0xFE), so send-keys-string / set-ui-io-ports do not work with in_key_pressed.
+    Instead, input.c exposes g_test_cmd: writing an ASCII byte there causes
+    input_poll to process one action on the next call, then clears it.
+
+    duration_ms is used as a settle delay (in ms) after injection so the game
+    loop has time to process the command before the caller checks state.
+    """
+    if syms is None:
+        syms = {}
+    ascii_char = KEY_MAP.get(key.upper(), KEY_MAP.get(key, key))
+    if isinstance(ascii_char, str):
+        ascii_char = ascii_char[0] if ascii_char else key[0]
+    ascii_val = ord(ascii_char)
+
+    cmd_addr = syms.get("_g_test_cmd")
+    if cmd_addr is None:
+        # Fallback: try legacy send-keys-string (may not work with in_key_pressed)
+        z.cmd(f"send-keys-string {duration_ms} {ascii_char}")
+        return
+
+    # Write ASCII value to the command mailbox; input_poll clears it after acting.
+    z.cmd(f"write-memory {cmd_addr} {ascii_val:02x}")
+    # Wait for input_poll to run (at 50 Hz, ~20 ms per frame; use duration_ms as settle)
+    time.sleep(max(duration_ms / 1000.0, 0.1))
 
 
 def dump_board(z: Zrcp, syms: dict, out_name: str):
@@ -221,7 +253,7 @@ def run_scenario(z: Zrcp, syms: dict, scenario: dict) -> list:
             elif op == "key":
                 key = step["key"]
                 dur = int(step.get("duration_ms", 100))
-                send_key(z, key, dur)
+                send_key(z, key, dur, syms)
                 results.append({"step": i, "op": op, "key": key, "status": "ok"})
 
             elif op == "dump_board":

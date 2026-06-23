@@ -1,0 +1,19 @@
+Retro 8-bit ZX Spectrum loading screen for a sci-fi tower-defense game titled "MELTDOWN".
+
+Aspect ratio: 4:3 (it will be downscaled to 256x192 pixels).
+
+Composition:
+- Large bold blocky pixel-font title "MELTDOWN" across the top, slightly distressed / hazard-stencil style.
+- Center: a dramatic cutaway of a glowing nuclear reactor core (concentric rings, hexagonal containment) pulsing with energy.
+- Foreground: black silhouettes of defensive laser turrets and a few armored defenders holding the line against incoming alien/robot intruders streaming in from the sides along corridor paths.
+- Mood: tense, heroic, "last stand", red-alert klaxon lighting.
+
+Strict art constraints (this MUST survive conversion to ZX Spectrum format = only 2 colours per 8x8 pixel cell):
+- Flat colour fills ONLY. No gradients, no soft shadows, no anti-aliasing, no blur.
+- Thick bold outlines and large simple shapes; avoid fine detail and thin lines.
+- High contrast, poster-like, hard edges.
+- Restrict to the ZX Spectrum palette: black, white, blue, red, magenta, green, cyan, yellow.
+- Dark (black) background with bright cyan / red / yellow accents; reactor core glowing yellow/white, hazard red highlights.
+- Strong silhouettes readable at low resolution.
+
+Overall: looks like an authentic 1980s ZX Spectrum game loading screen / cassette inlay artwork.

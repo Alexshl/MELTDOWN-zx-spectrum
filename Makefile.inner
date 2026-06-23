@@ -2,7 +2,7 @@
 # Only depends on zcc (from z88dk).
 
 PROJECT = app
-SRCS = src/main.c
+SRCS = src/main.c src/game.c src/render.c src/input.c src/sound.c src/level.c src/loading_scr.c src/assets_gfx.c
 CFLAGS = +zx -vn -SO3 -clib=new -pragma-include:zpragma.inc -m
 LDFLAGS = -create-app
 
