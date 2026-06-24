@@ -1,11 +1,10 @@
 {
-  "name": "flow-win",
-  "description": "First ENTER dismisses title (->BUILD). Second ENTER starts wave 0 (1 DRONE, no turret, leaks: stability 20->19). During BUILD after wave 0, press M to build LASER at (2,9). Then ENTERs release waves 1-5; LASER kills all enemies or they are few enough to not drain stability to 0. Final assert: state WIN, wave_index 5, stability > 0. Offsets: state _G+239, wave_index _G+240, stability _G+137, phase _G+2, towers_count _G+8.",
+  "name": "restart-meltdown",
+  "description": "Drive to MELTDOWN (same as flow-meltdown), then press ENTER to restart and verify game resets to TITLE with gold=100, stability=20, wave_index=0, towers_count=0.",
   "steps": [
     { "op": "frames", "n": 25 },
     { "op": "assert_eq", "mem": "_G+239", "val": 0, "ctx": "state TITLE at boot" },
     { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "phase BUILD at boot" },
-    { "op": "assert_eq", "mem": "_G+137", "val": 20, "ctx": "stability 20" },
 
     { "op": "key", "key": "ENTER", "duration_ms": 200 },
     { "op": "frames", "n": 5 },
@@ -14,20 +13,15 @@
 
     { "op": "key", "key": "ENTER", "duration_ms": 200 },
     { "op": "frames", "n": 5 },
-    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE (wave 0 started)" },
+    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 0" },
 
     { "op": "frames", "n": 500 },
-    { "op": "assert_eq", "mem": "_G+2",   "val": 0,  "ctx": "wave 0 cleared, phase BUILD" },
-    { "op": "assert_eq", "mem": "_G+240", "val": 1,  "ctx": "wave_index 1" },
-    { "op": "assert_eq", "mem": "_G+137", "val": 19, "ctx": "stability 19 after 1 leak" },
-
-    { "op": "key", "key": "M", "duration_ms": 200 },
-    { "op": "frames", "n": 10 },
-    { "op": "assert_eq", "mem": "_G+8", "val": 1, "ctx": "LASER built at (2,9)" },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "wave 0 cleared, phase BUILD" },
+    { "op": "assert_eq", "mem": "_G+240", "val": 1, "ctx": "wave_index advanced to 1" },
 
     { "op": "key", "key": "ENTER", "duration_ms": 200 },
     { "op": "frames", "n": 5 },
-    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 1 (4 DRONEs)" },
+    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 1" },
 
     { "op": "frames", "n": 700 },
     { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "wave 1 cleared, phase BUILD" },
@@ -35,7 +29,7 @@
 
     { "op": "key", "key": "ENTER", "duration_ms": 200 },
     { "op": "frames", "n": 5 },
-    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 2 (4 DRONEs)" },
+    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 2" },
 
     { "op": "frames", "n": 700 },
     { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "wave 2 cleared, phase BUILD" },
@@ -43,7 +37,7 @@
 
     { "op": "key", "key": "ENTER", "duration_ms": 200 },
     { "op": "frames", "n": 5 },
-    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 3 (4 RUNNERs)" },
+    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 3 (RUNNER)" },
 
     { "op": "frames", "n": 450 },
     { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "wave 3 cleared, phase BUILD" },
@@ -51,7 +45,7 @@
 
     { "op": "key", "key": "ENTER", "duration_ms": 200 },
     { "op": "frames", "n": 5 },
-    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 4 (4 RUNNERs)" },
+    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 4 (RUNNER)" },
 
     { "op": "frames", "n": 450 },
     { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "wave 4 cleared, phase BUILD" },
@@ -59,11 +53,19 @@
 
     { "op": "key", "key": "ENTER", "duration_ms": 200 },
     { "op": "frames", "n": 5 },
-    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 5 (4 BRUTEs)" },
+    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase WAVE for wave 5 (BRUTE)" },
 
     { "op": "frames", "n": 1000 },
-    { "op": "assert_eq",      "mem": "_G+239", "val": 2,  "ctx": "state WIN after all waves cleared" },
-    { "op": "assert_eq",      "mem": "_G+240", "val": 5,  "ctx": "wave_index at last wave (5)" },
-    { "op": "assert_nonzero", "mem": "_G+137", "ctx": "stability > 0" }
+    { "op": "assert_eq", "mem": "_G+239", "val": 3, "ctx": "state MELTDOWN" },
+    { "op": "assert_eq", "mem": "_G+137", "val": 0, "ctx": "stability 0" },
+
+    { "op": "key", "key": "ENTER", "duration_ms": 200 },
+    { "op": "frames", "n": 10 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 0,   "ctx": "back to TITLE after restart" },
+    { "op": "assert_eq", "mem": "_G+5",   "val": 100, "ctx": "gold low byte = 100" },
+    { "op": "assert_eq", "mem": "_G+6",   "val": 0,   "ctx": "gold high byte = 0" },
+    { "op": "assert_eq", "mem": "_G+137", "val": 20,  "ctx": "stability reset to 20" },
+    { "op": "assert_eq", "mem": "_G+240", "val": 0,   "ctx": "wave_index reset to 0" },
+    { "op": "assert_eq", "mem": "_G+8",   "val": 0,   "ctx": "towers_count reset to 0" }
   ]
 }

@@ -8,6 +8,10 @@
 int main(void)
 {
     uint8_t prev_state;
+    uint8_t prev_control_mode;
+    uint8_t prev_view;
+    uint8_t prev_ridx;
+    uint8_t prev_current_level;
 
     level_init();
     game_init();
@@ -15,9 +19,13 @@ int main(void)
     sound_init();
     intrinsic_ei();   /* enable interrupts so intrinsic_halt() can unblock at vsync */
 
-    /* Show title screen while state == STATE_TITLE */
-    render_title_screen();
-    prev_state = STATE_TITLE;
+    /* Show title menu while state == STATE_TITLE */
+    render_title_menu(G.control_mode);
+    prev_state         = STATE_TITLE;
+    prev_control_mode  = G.control_mode;
+    prev_view          = 0; /* MENU */
+    prev_ridx          = 0;
+    prev_current_level = 0;
 
     while (1) {
         input_poll();
@@ -25,17 +33,40 @@ int main(void)
         sound_tick();
 
         if (G.state == STATE_TITLE) {
-            /* Nothing to do in the loop body for TITLE; title screen is
-             * already displayed. input_poll handles ENTER -> game_title_start. */
+            uint8_t cur_view = input_title_view();
+            uint8_t cur_ridx = input_redefine_idx();
+
+            /* Repaint title menu when returning from WIN or MELTDOWN. */
+            if (prev_state == STATE_WIN || prev_state == STATE_MELTDOWN) {
+                render_title_menu(G.control_mode);
+                prev_control_mode = G.control_mode;
+                prev_view         = cur_view;
+                prev_ridx         = cur_ridx;
+            } else {
+                /* Repaint only when something menu-relevant changed. */
+                if (cur_view != prev_view ||
+                    G.control_mode != prev_control_mode ||
+                    cur_ridx != prev_ridx) {
+                    if (cur_view == 0) {
+                        render_title_menu(G.control_mode);
+                    } else {
+                        render_title_redefine(cur_ridx);
+                    }
+                    prev_control_mode = G.control_mode;
+                    prev_view         = cur_view;
+                    prev_ridx         = cur_ridx;
+                }
+            }
 
         } else if (G.state == STATE_PLAY) {
-            if (prev_state == STATE_TITLE) {
-                /* TITLE → PLAY edge: draw the game map and HUD for the first time */
+            if (prev_state == STATE_TITLE || G.current_level != prev_current_level) {
+                /* TITLE → PLAY edge or level advance: draw map and HUD fresh */
                 render_draw_map();
                 render_hud_frame();
                 render_cursor(G.cursor_col, G.cursor_row,
                               G.cursor_col, G.cursor_row);
                 render_hud_selection(G.sel_turret);
+                render_hud_turret_info(G.sel_turret);
             }
             render_frame();
             render_hud_stats(G.gold, G.stability, G.wave_index);
@@ -53,7 +84,8 @@ int main(void)
             /* Idle-halt */
         }
 
-        prev_state = G.state;
+        prev_state         = G.state;
+        prev_current_level = G.current_level;
         intrinsic_halt();
     }
 

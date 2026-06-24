@@ -48,7 +48,13 @@ struct Enemy {
  *   step_timer@+3, hp@+4, slow@+5), kills@238,
  * state@239 (STATE_TITLE/PLAY/WIN/MELTDOWN), wave_index@240,
  * last_sfx@241 (SFX_* event id; sticky — never auto-cleared),
- * music_cursor@242 (free-running uint8, bumped per note advance; struct tail) */
+ * music_cursor@242 (free-running uint8, bumped per note advance),
+ * sfx_timer@243 (one-shot SFX countdown in frames),
+ * control_mode@244 (CTRL_KEYBOARD or CTRL_KEMPSTON),
+ * current_level@245 (0-based campaign level index; struct tail, next-free @246) */
+
+#define CTRL_KEYBOARD 0
+#define CTRL_KEMPSTON 1
 struct GameState {
     uint16_t frame;        /* @0 */
     uint8_t  phase;        /* @2 */
@@ -69,11 +75,15 @@ struct GameState {
     uint8_t  wave_index;         /* @240: current wave (0-based) */
     uint8_t  last_sfx;           /* @241: last SFX_* event id (sticky) */
     uint8_t  music_cursor;       /* @242: free-running counter bumped each note advance */
+    uint8_t  sfx_timer;          /* @243: one-shot SFX countdown (frames remaining) */
+    uint8_t  control_mode;       /* @244: CTRL_KEYBOARD or CTRL_KEMPSTON */
+    uint8_t  current_level;      /* @245: 0-based campaign level index */
 };
 
 extern struct GameState G;
 
 void game_init(void);
+void game_restart(void);
 void game_tick(void);
 void game_start_wave(void);
 void game_title_start(void);

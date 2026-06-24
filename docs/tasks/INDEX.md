@@ -17,10 +17,16 @@ Vision: [`../PROJECT.md`](../PROJECT.md). Each task is driven through the 5-agen
 | 08  | [Game flow — waves, win/MELTDOWN, HUD, title](08-game-flow-waves.md) | DONE | `src/game.*`, `src/level.*`, scenarios `flow-meltdown`, `flow-win` |
 | 09  | [AY sound + content + balance + polish](09-sound-content-polish.md) | DONE | `src/sound.*`, `src/level.*`, scenario `sfx-events` |
 | 10  | [AY background music — underground/dungeon theme](10-ay-music.md) | DONE | `src/sound.*`, `src/game.*`, scenario `music-playing` |
+| 11  | [Game-over screens + restart (fix end-state freeze)](11-game-over-restart.md) | DONE | `src/main.c`, `src/game.*`, `src/render.*`, scenario `restart-meltdown` |
+| 12  | [Audio fix — transient SFX + ominous music](12-audio-transient-sfx-ominous-music.md) | DONE | `src/sound.*`, `src/game.*`, scenario `sfx-transient` |
+| 13  | [HUD — selected turret name + cost](13-hud-turret-name-cost.md) | DONE | `src/render.*`, scenario regression |
+| 14  | [Title screen — control setup (Keyboard/Kempston + redefine keys)](14-title-input-config.md) | DONE | `src/input.*`, `src/game.*`, `src/render.*`, scenario `input-config` |
+| 15  | [End-screen text (YOU WIN / MELTDOWN + PRESS ENTER)](15-end-screen-text.md) | DONE | `src/render.*`, scenario `flow-win` (restart check) |
+| 16  | [Multiple levels — 5-level linear campaign](16-multi-level-campaign.md) | IN PROGRESS | `src/level.*`, `src/game.*`, `src/render.*`, scenario `campaign-advance` |
 
 ## Execution order
 
-`01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10`
+`01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16`
 
 Parallelizable where convenient: **02** (host tooling) is independent of **01** (game scaffold); **05** and
 **06** both depend only on **04** and can be done in either order before **07**.

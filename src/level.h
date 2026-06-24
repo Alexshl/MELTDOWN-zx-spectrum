@@ -10,6 +10,9 @@
 #define MAX_TOWERS  32
 #define MAX_ENEMIES 16
 
+#define NUM_LEVELS  5
+#define MAX_PATH    24
+
 enum CellType {
     CELL_EMPTY = 0,
     CELL_FLOOR,
@@ -53,9 +56,8 @@ struct PathPoint {
     uint8_t row;
 };
 
-extern const uint8_t level_map[MAP_ROWS][MAP_COLS];
-extern const struct PathPoint level_path[];
-extern const uint8_t level_path_len;
+extern const struct PathPoint *level_path;     /* active path pointer */
+extern uint8_t                 level_path_len; /* active path length (mutable) */
 
 /* Wave table */
 struct WaveDef {
@@ -67,9 +69,10 @@ struct WaveDef {
 #define WAVE_COUNT       6
 #define WAVE_CLEAR_BONUS 15
 
-extern const struct WaveDef level_waves[WAVE_COUNT];
+extern const struct WaveDef *level_waves;      /* active wave table pointer */
 
 uint8_t level_cell(uint8_t col, uint8_t row);
 void level_init(void);
+void level_load(uint8_t n);
 
 #endif

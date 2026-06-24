@@ -20,4 +20,12 @@ void render_win_screen(void);
 void render_meltdown_screen(void);
 void render_hud_stats(uint16_t gold, uint8_t stability, uint8_t wave_num);
 
+/* HUD row 22: turret name + cost readout */
+void render_hud_turret_info(uint8_t sel_turret);
+
+/* Title-screen menu overlays (control mode selection + redefine flow) */
+void render_text(uint8_t col, uint8_t row, const char *s, uint8_t attr);
+void render_title_menu(uint8_t control_mode);
+void render_title_redefine(uint8_t action_idx);
+
 #endif

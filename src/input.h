@@ -12,4 +12,13 @@ extern uint8_t g_test_cmd;
 
 void input_poll(void);
 
+/* Reset rebindable key scancodes to factory defaults and clear redefine state. */
+void input_reset_bindings(void);
+
+/* Returns current title sub-state: 0 = MENU, 1 = REDEFINE. */
+uint8_t input_title_view(void);
+
+/* Returns the current redefine action index (0..5). */
+uint8_t input_redefine_idx(void);
+
 #endif

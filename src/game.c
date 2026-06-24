@@ -25,6 +25,9 @@ void game_init(void)
     G.wave_index         = 0;
     G.last_sfx           = SFX_NONE;
     G.music_cursor       = 0;
+    G.sfx_timer          = 0;
+    G.control_mode       = CTRL_KEYBOARD;
+    G.current_level      = 0;
     for (i = 0; i < MAX_ENEMIES; i++) {
         G.enemies[i].active     = 0;
         G.enemies[i].type       = 0;
@@ -33,6 +36,12 @@ void game_init(void)
         G.enemies[i].hp         = 0;
         G.enemies[i].slow       = 0;
     }
+    level_load(0);
+}
+
+void game_restart(void)
+{
+    game_init();
 }
 
 void game_title_start(void)
@@ -231,9 +240,34 @@ void game_tick(void)
     /* WAVE CLEAR: all enemies spawned and none left alive */
     if (G.spawned_this_wave >= G.wave_size && G.enemies_count == 0) {
         if (G.wave_index >= WAVE_COUNT - 1) {
-            /* Last wave cleared — player wins */
-            G.state = STATE_WIN;
-            G.last_sfx = SFX_WIN;
+            /* Last wave of this level cleared */
+            if (G.current_level < NUM_LEVELS - 1) {
+                /* Advance to next level */
+                G.current_level++;
+                level_load(G.current_level);
+                for (i = 0; i < MAX_ENEMIES; i++) {
+                    G.enemies[i].active     = 0;
+                    G.enemies[i].type       = 0;
+                    G.enemies[i].path_idx   = 0;
+                    G.enemies[i].step_timer = 0;
+                    G.enemies[i].hp         = 0;
+                    G.enemies[i].slow       = 0;
+                }
+                G.enemies_count      = 0;
+                G.towers_count       = 0;
+                G.wave_index         = 0;
+                G.phase              = PHASE_BUILD;
+                G.stability          = 20;
+                G.gold               = 100;
+                G.spawned_this_wave  = 0;
+                G.wave_size          = 0;
+                G.spawn_timer        = 0;
+                /* state stays STATE_PLAY; do not touch last_sfx */
+            } else {
+                /* Last level cleared — player wins */
+                G.state    = STATE_WIN;
+                G.last_sfx = SFX_WIN;
+            }
         } else {
             /* Advance to next wave and return to BUILD */
             G.gold += WAVE_CLEAR_BONUS;

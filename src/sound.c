@@ -35,76 +35,77 @@
     do { z80_outp(AY_REG_SELECT, (reg)); z80_outp(AY_REG_WRITE, (val)); } while(0)
 
 /* -----------------------------------------------------------------------
- * Original dungeon melody — A natural minor, walking/arpeggiated feel.
+ * Original ominous theme — A natural minor, brooding low-register motif.
  * Period formula: round(1773400 / (16 * freq_Hz))
  *
- * Note periods (12-bit):
- *   A3=220Hz  ->504, B3=246.9Hz ->449, C4=261.6Hz ->424, D4=293.7Hz ->377
- *   E4=329.6Hz->336, F4=349.2Hz ->317, G4=392Hz   ->283, A4=440Hz   ->252
- *   B4=493.9Hz->224, C5=523.3Hz ->212, D5=587.3Hz ->189, E5=659.3Hz ->168
- *   G3=196Hz  ->566
- *   REST (period ignored, vol=0) represented as 0
+ * Note periods (12-bit), derived from the formula above:
+ *   A2 =110.00 Hz -> period 1008   (round(1773400/1760)   = 1008)
+ *   B2 =123.47 Hz -> period  898   (round(1773400/1975.5)  = 898)
+ *   C3 =130.81 Hz -> period  847   (round(1773400/2093)    = 847)
+ *   D3 =146.83 Hz -> period  755   (round(1773400/2349)    = 755)
+ *   E2 = 82.41 Hz -> period 1345   (round(1773400/1318.5)  = 1345)
+ *   F2 = 87.31 Hz -> period 1269   (round(1773400/1397)    = 1269)
+ *   G2 = 98.00 Hz -> period 1131   (round(1773400/1568)    = 1131)
+ *   REST (period 0, vol=0)
  *
- * Melody (20 notes, channel B): original ascending/descending arpeggiated
- * dungeon motif — not derived from any existing copyrighted work.
- * Sequence: A4 E4 A4 C5 B4 A4 G4 E4 D4 F4 E4 D4 C4 A3 G4 A4 E4 D4 C4 E4
+ * Sequence (16 notes, channel B): slow descending A-minor brooding motif —
+ * original composition, not derived from any existing copyrighted work.
+ * A2 A2 C3 A2 REST G2 A2 E2 F2 E2 REST D3 C3 B2 A2 E2
  * ----------------------------------------------------------------------- */
-#define MUSIC_LEN        20
-#define MUSIC_TEMPO      8   /* frames per note step */
-#define MUSIC_VOL_B      11  /* channel B volume (0-15) */
-#define PERIOD_REST      0   /* rest: write vol=0 */
+#define MUSIC_LEN        16
+#define MUSIC_VOL_B      10  /* channel B volume (0-15) */
+#define PERIOD_REST      0   /* rest: write vol=0, skip tone write */
 
 /* Period table — 12-bit AY periods for each note in sequence */
 static const uint16_t music_periods[MUSIC_LEN] = {
-    252,  /* A4  440.0 Hz */
-    336,  /* E4  329.6 Hz */
-    252,  /* A4  440.0 Hz */
-    212,  /* C5  523.3 Hz */
-    224,  /* B4  493.9 Hz */
-    252,  /* A4  440.0 Hz */
-    283,  /* G4  392.0 Hz */
-    336,  /* E4  329.6 Hz */
-    377,  /* D4  293.7 Hz */
-    317,  /* F4  349.2 Hz */
-    336,  /* E4  329.6 Hz */
-    377,  /* D4  293.7 Hz */
-    424,  /* C4  261.6 Hz */
-    504,  /* A3  220.0 Hz */
-    283,  /* G4  392.0 Hz */
-    252,  /* A4  440.0 Hz */
-    336,  /* E4  329.6 Hz */
-    377,  /* D4  293.7 Hz */
-    424,  /* C4  261.6 Hz */
-    336   /* E4  329.6 Hz */
+    1008, /* A2  110.00 Hz */
+    1008, /* A2  110.00 Hz */
+     847, /* C3  130.81 Hz */
+    1008, /* A2  110.00 Hz */
+       0, /* REST           */
+    1131, /* G2   98.00 Hz */
+    1008, /* A2  110.00 Hz */
+    1345, /* E2   82.41 Hz */
+    1269, /* F2   87.31 Hz */
+    1345, /* E2   82.41 Hz */
+       0, /* REST           */
+     755, /* D3  146.83 Hz */
+     847, /* C3  130.81 Hz */
+     898, /* B2  123.47 Hz */
+    1008, /* A2  110.00 Hz */
+    1345  /* E2   82.41 Hz */
 };
 
-/* Per-note frame durations (multiples of MUSIC_TEMPO allow longer held notes) */
+/* Per-note frame durations */
 static const uint8_t music_durations[MUSIC_LEN] = {
-    8,  /* A4 */
-    8,  /* E4 */
-    8,  /* A4 */
-    12, /* C5 — held a bit longer */
-    8,  /* B4 */
-    8,  /* A4 */
-    8,  /* G4 */
-    8,  /* E4 */
-    8,  /* D4 */
-    8,  /* F4 */
-    8,  /* E4 */
-    8,  /* D4 */
-    8,  /* C4 */
-    12, /* A3 — held a bit longer */
-    8,  /* G4 */
-    8,  /* A4 */
-    8,  /* E4 */
-    8,  /* D4 */
-    8,  /* C4 */
-    8   /* E4 */
+    16, /* A2 */
+    12, /* A2 */
+    14, /* C3 */
+    16, /* A2 */
+     8, /* REST */
+    14, /* G2 */
+    16, /* A2 */
+    16, /* E2 */
+    14, /* F2 */
+    16, /* E2 */
+     8, /* REST */
+    14, /* D3 */
+    14, /* C3 */
+    16, /* B2 */
+    16, /* A2 */
+    16  /* E2 */
 };
+
+/* SFX one-shot duration: number of frames each SFX plays for */
+#define SFX_FRAMES 8
 
 /* Music sequencer state (module-static, non-blocking) */
 static uint8_t  music_note   = 0;   /* current note index [0, MUSIC_LEN) */
 static uint8_t  music_frames = 0;   /* frames remaining for current note */
+
+/* SFX transient state */
+static uint8_t  prev_sfx = SFX_NONE;  /* last observed last_sfx for edge detection */
+static uint8_t  cur_sfx  = SFX_NONE;  /* sfx being played during the countdown */
 
 void sound_init(void)
 {
@@ -117,79 +118,76 @@ void sound_init(void)
 
 void sound_tick(void)
 {
-    static uint8_t prev_sfx = SFX_NONE;
     uint8_t sfx = G.last_sfx;
     uint8_t r7;           /* combined mixer byte built once per frame */
-    uint8_t sfx_active;   /* 1 if SFX is playing on channel A */
+    uint8_t sfx_active;   /* 1 if SFX countdown is running */
     uint8_t music_active; /* 1 if music is playing on channel B */
     uint8_t sfx_noise;    /* 1 if current SFX uses noise on channel A */
 
     /* ----------------------------------------------------------------
-     * Step 1: Determine SFX channel-A state.
-     * Re-program channel A registers only on SFX change (edge detection).
+     * Step 1: SFX transient countdown on channel A.
+     * On edge: arm G.sfx_timer and program channel A registers.
+     * Every frame: count down G.sfx_timer; silence vol A when it expires.
      * ---------------------------------------------------------------- */
-    sfx_active = 0;
-    sfx_noise  = 0;
-
     if (sfx != prev_sfx) {
         prev_sfx = sfx;
-        switch (sfx) {
-        case SFX_NONE:
-            ay_write(AY_R8_VOL_A, 0);
-            sfx_active = 0;
-            break;
+        if (sfx != SFX_NONE) {
+            cur_sfx = sfx;
+            /* Program channel A for this SFX */
+            switch (sfx) {
+            case SFX_FIRE:
+                ay_write(AY_R0_TONE_A_LO, 0x00);
+                ay_write(AY_R1_TONE_A_HI, 0x01);
+                ay_write(AY_R8_VOL_A, 8);
+                break;
 
-        case SFX_FIRE:
-            ay_write(AY_R0_TONE_A_LO, 0x00);
-            ay_write(AY_R1_TONE_A_HI, 0x01);
-            ay_write(AY_R8_VOL_A, 8);
-            sfx_active = 1;
-            break;
+            case SFX_HIT:
+                ay_write(AY_R0_TONE_A_LO, 0x00);
+                ay_write(AY_R1_TONE_A_HI, 0x02);
+                ay_write(AY_R8_VOL_A, 12);
+                break;
 
-        case SFX_HIT:
-            ay_write(AY_R0_TONE_A_LO, 0x00);
-            ay_write(AY_R1_TONE_A_HI, 0x02);
-            ay_write(AY_R8_VOL_A, 12);
-            sfx_active = 1;
-            break;
+            case SFX_WAVE_START:
+                ay_write(AY_R0_TONE_A_LO, 0x00);
+                ay_write(AY_R1_TONE_A_HI, 0x04);
+                ay_write(AY_R8_VOL_A, 10);
+                break;
 
-        case SFX_WAVE_START:
-            ay_write(AY_R0_TONE_A_LO, 0x00);
-            ay_write(AY_R1_TONE_A_HI, 0x04);
-            ay_write(AY_R8_VOL_A, 10);
-            sfx_active = 1;
-            break;
+            case SFX_CORE_HIT:
+                ay_write(AY_R0_TONE_A_LO, 0x80);
+                ay_write(AY_R1_TONE_A_HI, 0x03);
+                ay_write(AY_R8_VOL_A, 14);
+                break;
 
-        case SFX_CORE_HIT:
-            ay_write(AY_R0_TONE_A_LO, 0x80);
-            ay_write(AY_R1_TONE_A_HI, 0x03);
-            ay_write(AY_R8_VOL_A, 14);
-            sfx_active = 1;
-            sfx_noise  = 1; /* also enable noise on channel A */
-            break;
+            case SFX_WIN:
+                ay_write(AY_R0_TONE_A_LO, 0x00);
+                ay_write(AY_R1_TONE_A_HI, 0x08);
+                ay_write(AY_R8_VOL_A, 15);
+                break;
 
-        case SFX_WIN:
-            ay_write(AY_R0_TONE_A_LO, 0x00);
-            ay_write(AY_R1_TONE_A_HI, 0x08);
-            ay_write(AY_R8_VOL_A, 15);
-            sfx_active = 1;
-            break;
+            case SFX_MELTDOWN:
+                ay_write(AY_R0_TONE_A_LO, 0x00);
+                ay_write(AY_R1_TONE_A_HI, 0x10);
+                ay_write(AY_R8_VOL_A, 15);
+                break;
 
-        case SFX_MELTDOWN:
-            ay_write(AY_R0_TONE_A_LO, 0x00);
-            ay_write(AY_R1_TONE_A_HI, 0x10);
-            ay_write(AY_R8_VOL_A, 15);
-            sfx_active = 1;
-            break;
-
-        default:
-            break;
+            default:
+                break;
+            }
+            G.sfx_timer = SFX_FRAMES;
         }
-    } else {
-        /* SFX unchanged — infer active state from current sfx id */
-        sfx_active = (sfx != SFX_NONE) ? 1 : 0;
-        sfx_noise  = (sfx == SFX_CORE_HIT) ? 1 : 0;
     }
+
+    /* Countdown: decrement every frame, silence vol A on expiry */
+    if (G.sfx_timer > 0) {
+        G.sfx_timer--;
+        if (G.sfx_timer == 0) {
+            ay_write(AY_R8_VOL_A, 0);
+        }
+    }
+
+    sfx_active = (G.sfx_timer > 0) ? 1 : 0;
+    sfx_noise  = (sfx_active && cur_sfx == SFX_CORE_HIT) ? 1 : 0;
 
     /* ----------------------------------------------------------------
      * Step 2: Run music sequencer on channel B (STATE_PLAY only).
@@ -205,10 +203,15 @@ void sound_tick(void)
             music_note = (music_note + 1) % MUSIC_LEN;
             G.music_cursor++;          /* free-running, wraps at 256 */
             period = music_periods[music_note];
-            /* Program channel B tone period */
-            ay_write(AY_R2_TONE_B_LO, (uint8_t)(period & 0xFF));
-            ay_write(AY_R3_TONE_B_HI, (uint8_t)((period >> 8) & 0x0F));
-            ay_write(AY_R9_VOL_B, MUSIC_VOL_B);
+            if (period == PERIOD_REST) {
+                /* Silence channel B for a rest */
+                ay_write(AY_R9_VOL_B, 0);
+            } else {
+                /* Program channel B tone period and volume */
+                ay_write(AY_R2_TONE_B_LO, (uint8_t)(period & 0xFF));
+                ay_write(AY_R3_TONE_B_HI, (uint8_t)((period >> 8) & 0x0F));
+                ay_write(AY_R9_VOL_B, MUSIC_VOL_B);
+            }
             music_frames = music_durations[music_note];
         } else {
             music_frames--;

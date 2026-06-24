@@ -1,0 +1,27 @@
+{
+  "name": "input-config",
+  "description": "Control-mode selection: keyboard default, switch to Kempston, verify ENTER still starts game, mailbox logical actions unaffected by control_mode",
+  "steps": [
+    { "op": "frames", "n": 25 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 0, "ctx": "state==STATE_TITLE" },
+    { "op": "assert_eq", "mem": "_G+244", "val": 0, "ctx": "control_mode==CTRL_KEYBOARD default" },
+
+    { "op": "key", "key": "2" },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+244", "val": 1, "ctx": "control_mode==CTRL_KEMPSTON after key 2" },
+    { "op": "assert_eq", "mem": "_G+239", "val": 0, "ctx": "still STATE_TITLE — mode select does not start game" },
+
+    { "op": "key", "key": "ENTER" },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+239", "val": 1, "ctx": "state==STATE_PLAY after ENTER" },
+    { "op": "assert_eq", "mem": "_G+2",   "val": 0, "ctx": "phase==PHASE_BUILD" },
+
+    { "op": "key", "key": "M" },
+    { "op": "frames", "n": 15 },
+    { "op": "assert_eq", "mem": "_G+8", "val": 1, "ctx": "towers_count==1 — mailbox build works regardless of control_mode" },
+
+    { "op": "key", "key": "ENTER" },
+    { "op": "frames", "n": 5 },
+    { "op": "assert_eq", "mem": "_G+2", "val": 1, "ctx": "phase==PHASE_WAVE after ENTER" }
+  ]
+}

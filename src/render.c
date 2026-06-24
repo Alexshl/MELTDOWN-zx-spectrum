@@ -226,6 +226,29 @@ static const uint8_t gfx_label_G[8] = { 0x3C,0x66,0x60,0x6E,0x66,0x66,0x3C,0x00 
 static const uint8_t gfx_label_S[8] = { 0x3C,0x66,0x60,0x3C,0x06,0x66,0x3C,0x00 };
 static const uint8_t gfx_label_W[8] = { 0x63,0x63,0x6B,0x6B,0x7F,0x77,0x63,0x00 };
 
+/* Additional letter glyphs for turret name readout on HUD row 22.
+ * Same 5x7-in-8-cell style (blank 8th row) as gfx_label_* above. */
+static const uint8_t gfx_letter_L[8] = { 0x60,0x60,0x60,0x60,0x60,0x66,0x7E,0x00 };
+static const uint8_t gfx_letter_A[8] = { 0x18,0x3C,0x66,0x7E,0x66,0x66,0x66,0x00 };
+/* gfx_label_S is reused for 'S' */
+static const uint8_t gfx_letter_E[8] = { 0x7E,0x60,0x60,0x7C,0x60,0x60,0x7E,0x00 };
+static const uint8_t gfx_letter_R[8] = { 0x7C,0x66,0x66,0x7C,0x6C,0x66,0x66,0x00 };
+static const uint8_t gfx_letter_M[8] = { 0x63,0x77,0x7F,0x6B,0x63,0x63,0x63,0x00 };
+static const uint8_t gfx_letter_I[8] = { 0x7E,0x18,0x18,0x18,0x18,0x18,0x7E,0x00 };
+static const uint8_t gfx_letter_T[8] = { 0x7E,0x18,0x18,0x18,0x18,0x18,0x18,0x00 };
+static const uint8_t glyph_dollar[8]  = { 0x18,0x3E,0x60,0x3C,0x06,0x7C,0x18,0x00 };
+
+/* Turret name glyph table: 3 turrets × 5 letters.
+ * LASER  → L A S E R
+ * MISSL  → M I S S L   (5-char fit; 'MISSILE' truncated to 5)
+ * TESLA  → T E S L A
+ */
+static const uint8_t * const turret_name_glyphs[3][5] = {
+    { gfx_letter_L, gfx_letter_A, gfx_label_S, gfx_letter_E, gfx_letter_R }, /* LASER  */
+    { gfx_letter_M, gfx_letter_I, gfx_label_S, gfx_label_S,  gfx_letter_L }, /* MISSL  */
+    { gfx_letter_T, gfx_letter_E, gfx_label_S, gfx_letter_L, gfx_letter_A }  /* TESLA  */
+};
+
 /* Render HUD stat numbers: gold, stability, wave number.
  * Layout (HUD row 21 = HUD_ROW0):
  *   col 0   : blank (HUD background)
@@ -248,6 +271,27 @@ void render_hud_stats(uint16_t gold, uint8_t stability, uint8_t wave_num)
     draw_number(11, HUD_ROW0, wave_num,   2, PAPER_BLUE | INK_WHITE  | BRIGHT);
 }
 
+/* Render turret name + cost on HUD row 22 (HUD_ROW0 + 1).
+ * Layout cols 1-10: [name×5][blank][$ ][cost×3]
+ */
+void render_hud_turret_info(uint8_t sel_turret)
+{
+    uint8_t i;
+    uint8_t attr_name = PAPER_BLUE | INK_WHITE | BRIGHT;
+    uint8_t attr_cost = PAPER_BLUE | INK_YELLOW | BRIGHT;
+
+    if (sel_turret > 2) return;
+
+    for (i = 0; i < 5; i++) {
+        draw_glyph((uint8_t)(1 + i), HUD_ROW0 + 1,
+                   turret_name_glyphs[sel_turret][i], attr_name);
+    }
+    draw_glyph(6, HUD_ROW0 + 1, gfx_blank, PAPER_BLUE | INK_WHITE);
+    draw_glyph(7, HUD_ROW0 + 1, glyph_dollar, attr_cost);
+    draw_number(8, HUD_ROW0 + 1, (uint16_t)turret_stats[sel_turret].cost,
+                3, attr_cost);
+}
+
 /* Title screen: reuse the loading.scr asset (same 6912-byte memcpy path),
  * then overlay a small "PRESS ENTER" hint at the bottom of the attribute file. */
 void render_title_screen(void)
@@ -264,24 +308,190 @@ void render_title_screen(void)
     }
 }
 
-/* Win screen: green attribute wash over the whole screen. */
+/* Win screen: clear all pixels, green attribute wash, blue prompt band rows 22-23. */
 void render_win_screen(void)
 {
     uint8_t row, col;
+    /* Clear all pixel bytes (rows 0-23) so gameplay pixels don't bleed through */
+    memset((void *)0x4000, 0, 6144);
+    /* Paint full-screen attribute: green background, white ink */
     for (row = 0; row < 24; row++) {
         for (col = 0; col < 32; col++) {
             *zx_cxy2aaddr(col, row) = PAPER_GREEN | INK_WHITE | BRIGHT;
         }
     }
+    /* Contrasting prompt band on rows 22-23 */
+    for (col = 0; col < 32; col++) {
+        *zx_cxy2aaddr(col, 22) = PAPER_BLUE | INK_WHITE | BRIGHT;
+        *zx_cxy2aaddr(col, 23) = PAPER_BLUE | INK_WHITE | BRIGHT;
+    }
+    /* Text drawn last so it is not overwritten by the wash/band above */
+    render_text(12, 10, "YOU WIN",     PAPER_GREEN | INK_BLACK | BRIGHT);
+    render_text(10, 22, "PRESS ENTER", PAPER_BLUE  | INK_WHITE | BRIGHT);
 }
 
-/* Meltdown screen: red attribute wash over the whole screen. */
+/* A-Z uppercase font, 5x7-in-8-cell, blank 8th row, column-centred.
+ * Indexed [0..25] = A..Z. Same style as gfx_letter_* glyphs already used
+ * in the HUD turret-name readout. */
+static const uint8_t font_az[26][8] = {
+    { 0x18,0x3C,0x66,0x7E,0x66,0x66,0x66,0x00 }, /* A */
+    { 0x7C,0x66,0x66,0x7C,0x66,0x66,0x7C,0x00 }, /* B */
+    { 0x3C,0x66,0x60,0x60,0x60,0x66,0x3C,0x00 }, /* C */
+    { 0x78,0x6C,0x66,0x66,0x66,0x6C,0x78,0x00 }, /* D */
+    { 0x7E,0x60,0x60,0x7C,0x60,0x60,0x7E,0x00 }, /* E */
+    { 0x7E,0x60,0x60,0x7C,0x60,0x60,0x60,0x00 }, /* F */
+    { 0x3C,0x66,0x60,0x6E,0x66,0x66,0x3C,0x00 }, /* G */
+    { 0x66,0x66,0x66,0x7E,0x66,0x66,0x66,0x00 }, /* H */
+    { 0x7E,0x18,0x18,0x18,0x18,0x18,0x7E,0x00 }, /* I */
+    { 0x1E,0x06,0x06,0x06,0x06,0x66,0x3C,0x00 }, /* J */
+    { 0x66,0x6C,0x78,0x70,0x78,0x6C,0x66,0x00 }, /* K */
+    { 0x60,0x60,0x60,0x60,0x60,0x66,0x7E,0x00 }, /* L */
+    { 0x63,0x77,0x7F,0x6B,0x63,0x63,0x63,0x00 }, /* M */
+    { 0x66,0x76,0x7E,0x7E,0x6E,0x66,0x66,0x00 }, /* N */
+    { 0x3C,0x66,0x66,0x66,0x66,0x66,0x3C,0x00 }, /* O */
+    { 0x7C,0x66,0x66,0x7C,0x60,0x60,0x60,0x00 }, /* P */
+    { 0x3C,0x66,0x66,0x66,0x6E,0x3C,0x0E,0x00 }, /* Q */
+    { 0x7C,0x66,0x66,0x7C,0x6C,0x66,0x66,0x00 }, /* R */
+    { 0x3C,0x66,0x60,0x3C,0x06,0x66,0x3C,0x00 }, /* S */
+    { 0x7E,0x18,0x18,0x18,0x18,0x18,0x18,0x00 }, /* T */
+    { 0x66,0x66,0x66,0x66,0x66,0x66,0x3C,0x00 }, /* U */
+    { 0x66,0x66,0x66,0x66,0x66,0x3C,0x18,0x00 }, /* V */
+    { 0x63,0x63,0x6B,0x6B,0x7F,0x77,0x63,0x00 }, /* W */
+    { 0x66,0x66,0x3C,0x18,0x3C,0x66,0x66,0x00 }, /* X */
+    { 0x66,0x66,0x66,0x3C,0x18,0x18,0x18,0x00 }, /* Y */
+    { 0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0x00 }  /* Z */
+};
+
+/* Draw a NUL-terminated UPPERCASE string starting at character cell (col, row).
+ * A-Z from font_az, 0-9 from digit_font, space = gfx_blank.
+ * Stops at NUL or when col reaches 31 (screen edge). */
+void render_text(uint8_t col, uint8_t row, const char *s, uint8_t attr)
+{
+    while (*s && col < 32) {
+        char c = *s++;
+        if (c >= 'A' && c <= 'Z') {
+            draw_glyph(col, row, font_az[(uint8_t)(c - 'A')], attr);
+        } else if (c >= '0' && c <= '9') {
+            draw_glyph(col, row, digit_font[(uint8_t)(c - '0')], attr);
+        } else {
+            /* space or any other char -> blank */
+            draw_glyph(col, row, gfx_blank, attr);
+        }
+        col++;
+    }
+}
+
+/* Paint a solid PAPER_BLUE attribute band across all 32 columns of a given row. */
+static void paint_blue_band(uint8_t row)
+{
+    uint8_t col;
+    for (col = 0; col < 32; col++) {
+        draw_glyph(col, row, gfx_blank, PAPER_BLUE | INK_WHITE);
+    }
+}
+
+/* Digit characters for render_text number helpers */
+static const char digits_ch[10] = {'0','1','2','3','4','5','6','7','8','9'};
+
+/* Render title screen with control-mode menu overlay. */
+void render_title_menu(uint8_t control_mode)
+{
+    uint8_t attr_norm  = PAPER_BLUE | INK_WHITE | BRIGHT;
+    uint8_t attr_hi    = PAPER_BLUE | INK_YELLOW | BRIGHT;
+
+    /* Blit the full .scr to screen */
+    memcpy((void *)0x4000, loading_scr, 6912);
+
+    /* Paint blue bands on rows 18-23 for menu contrast */
+    paint_blue_band(18);
+    paint_blue_band(19);
+    paint_blue_band(20);
+    paint_blue_band(21);
+    paint_blue_band(22);
+    paint_blue_band(23);
+
+    /* Row 18: current mode indicator */
+    if (control_mode == CTRL_KEMPSTON) {
+        render_text(2, 18, "MODE KEMPSTON", attr_hi);
+    } else {
+        render_text(2, 18, "MODE KEYBOARD", attr_hi);
+    }
+
+    /* Row 19: option 1 */
+    render_text(2, 19, "1 KEYBOARD", attr_norm);
+
+    /* Row 20: option 2 */
+    render_text(2, 20, "2 KEMPSTON", attr_norm);
+
+    /* Row 21: option 3 */
+    render_text(2, 21, "3 REDEFINE", attr_norm);
+
+    /* Row 23: ENTER hint */
+    render_text(2, 23, "ENTER START", attr_norm);
+}
+
+/* Action names for redefine display (6 actions: UP DOWN LEFT RIGHT CYCLE BUILD) */
+static const char * const action_names[6] = {
+    "UP", "DOWN", "LEFT", "RIGHT", "CYCLE", "BUILD"
+};
+
+/* Render title screen with key-redefine overlay. */
+void render_title_redefine(uint8_t action_idx)
+{
+    uint8_t attr_norm = PAPER_BLUE | INK_WHITE | BRIGHT;
+    uint8_t attr_hi   = PAPER_BLUE | INK_YELLOW | BRIGHT;
+    char buf[8];
+    uint8_t n;
+
+    /* Blit full .scr */
+    memcpy((void *)0x4000, loading_scr, 6912);
+
+    /* Paint blue bands on rows 18-23 */
+    paint_blue_band(18);
+    paint_blue_band(19);
+    paint_blue_band(20);
+    paint_blue_band(21);
+    paint_blue_band(22);
+    paint_blue_band(23);
+
+    /* Row 18: "PRESS KEY" */
+    render_text(2, 18, "PRESS KEY", attr_hi);
+
+    /* Row 19: action name */
+    if (action_idx < 6) {
+        render_text(2, 19, action_names[action_idx], attr_norm);
+    }
+
+    /* Row 20: "n OF 6" progress */
+    n = action_idx + 1;
+    buf[0] = (n <= 9) ? (char)('0' + n) : '6';
+    buf[1] = ' ';
+    buf[2] = 'O';
+    buf[3] = 'F';
+    buf[4] = ' ';
+    buf[5] = '6';
+    buf[6] = '\0';
+    render_text(2, 20, buf, attr_norm);
+}
+
+/* Meltdown screen: clear all pixels, red attribute wash, blue prompt band rows 22-23. */
 void render_meltdown_screen(void)
 {
     uint8_t row, col;
+    /* Clear all pixel bytes (rows 0-23) so gameplay pixels don't bleed through */
+    memset((void *)0x4000, 0, 6144);
+    /* Paint full-screen attribute: red background, yellow ink */
     for (row = 0; row < 24; row++) {
         for (col = 0; col < 32; col++) {
             *zx_cxy2aaddr(col, row) = PAPER_RED | INK_YELLOW | BRIGHT;
         }
     }
+    /* Contrasting prompt band on rows 22-23 */
+    for (col = 0; col < 32; col++) {
+        *zx_cxy2aaddr(col, 22) = PAPER_BLUE | INK_WHITE | BRIGHT;
+        *zx_cxy2aaddr(col, 23) = PAPER_BLUE | INK_WHITE | BRIGHT;
+    }
+    /* Text drawn last so it is not overwritten by the wash/band above */
+    render_text(12, 10, "MELTDOWN",    PAPER_RED  | INK_YELLOW | BRIGHT);
+    render_text(10, 22, "PRESS ENTER", PAPER_BLUE | INK_WHITE  | BRIGHT);
 }
